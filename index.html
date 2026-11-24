@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>豆包｜跨聊天记忆边界管理研究原型</title>
+<style>
+:root{--blue:#1677f8;--blue2:#eaf2ff;--ink:#17191d;--muted:#92979f;--line:#eceef2;--bg:#f7f8fa;--card:#fff}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Arial,sans-serif;color:var(--ink);background:#e9edf2}
+button,input{font:inherit}button{cursor:pointer}
+.phone{width:min(100%,440px);min-height:100dvh;margin:0 auto;background:#fff;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 24px #0001}
+.status{height:31px;flex:none;padding:6px 20px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:650;background:#fff}
+.header{height:65px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#fff;position:relative}
+.headleft,.headright{display:flex;align-items:center;gap:17px}
+.icon{border:0;background:transparent;padding:4px;font-size:25px;line-height:1;color:#101216}
+.brand{text-align:center;font-size:20px;font-weight:650;line-height:1.1;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;z-index:1;pointer-events:none}
+.brand small{display:block;color:#a1a4aa;font-size:11px;font-weight:400;margin-top:5px}
+.content{flex:1;overflow-y:auto;background:#fff;padding:8px 16px 18px}
+.screen{display:none}.screen.active{display:block}
+.chatbody{padding:14px 2px 10px}
+.chat-bubble{max-width:90%;padding:13px 15px;border-radius:18px;font-size:15px;line-height:1.7;margin:14px 0;white-space:pre-wrap}
+.user{margin-left:auto;background:var(--blue);color:#fff;border-bottom-right-radius:5px}
+.bot{margin-right:auto;background:#f4f5f7;color:#202226;border-bottom-left-radius:5px}
+.bot p{margin:0 0 8px}.bot p:last-child{margin-bottom:0}
+.banner{background:#eaf2ff;border-radius:15px;padding:12px 14px;color:#126ce0;font-size:13px;line-height:1.6;margin:10px 0}
+.source-link{border:0;background:transparent;color:#126ce0;padding:7px 0 0;font-size:13px}
+.feedback{display:flex;gap:13px;color:#1677f8;padding:8px 8px 12px;font-size:20px}
+.quick-actions{display:flex;gap:7px;overflow:auto;padding:7px 0 12px}
+.quick-actions button{white-space:nowrap;border:1px solid #e7e8eb;background:#fff;border-radius:12px;padding:9px 12px;font-size:13px;color:#282a2e}
+.composer-wrap{flex:none;padding:8px 14px 12px;background:#fff}
+.composer{display:flex;align-items:center;gap:10px;border:1px solid #eceef1;border-radius:25px;box-shadow:0 3px 12px #00000012;padding:8px 11px;min-height:53px}
+.composer input{flex:1;min-width:0;border:0;outline:0;font-size:14px}
+.composer button{border:0;background:transparent;font-size:21px;padding:4px}
+.navline{height:5px;width:108px;background:#777;border-radius:8px;margin:5px auto 3px}
+.page-title{text-align:center;font-size:21px;font-weight:700;margin:5px 0 2px}
+.page-sub{text-align:center;font-size:13px;color:#969aa1;margin-bottom:20px}
+.search{border:1px solid #e9ebef;background:#f7f8fa;border-radius:24px;padding:13px 15px;color:#999;margin:14px 0}
+.tabs{display:flex;gap:8px;margin:12px 0 18px;overflow:auto}
+.tab{border:0;border-radius:24px;background:#f0f1f3;padding:9px 17px;white-space:nowrap;font-size:14px}
+.tab.active{background:var(--blue);color:white}
+.panel{background:#fff;border:1px solid #f0f1f3;border-radius:19px;padding:15px;margin:12px 0;box-shadow:0 3px 14px #00000004}
+.mem-head{display:flex;gap:12px;align-items:flex-start}
+.mem-icon{display:none}
+.mem-title{font-size:16px;font-weight:700;margin:2px 0 9px}
+.meta{font-size:12px;color:#6f747c;line-height:1.9}
+.actions{display:flex;gap:7px;margin-top:12px;padding-top:11px;border-top:1px solid #f0f1f3}
+.action{flex:1;border:1px solid #e5e8ed;background:#fff;border-radius:13px;padding:9px 5px;font-size:12px;color:#202329}
+.action.blue{background:#edf4ff;border-color:#edf4ff;color:#126ce0}
+.action.red{color:#d04a4a}
+.section-label{font-size:14px;font-weight:700;margin:18px 2px 9px}
+.rowitem{display:flex;align-items:center;justify-content:space-between;padding:15px 3px;border-bottom:1px solid #f0f1f3;font-size:15px}
+.rowitem:last-child{border-bottom:0}
+.rowleft{display:flex;align-items:center;gap:12px}
+.rowicon{width:34px;height:34px;border-radius:11px;background:#eaf2ff;color:#1677f8;display:grid;place-items:center;font-size:18px}
+.chev{color:#b4b8bf;font-size:21px}
+.info{background:#f4f6f9;border-radius:14px;padding:12px 14px;color:#777e87;font-size:12px;line-height:1.7;margin:14px 0}
+.btn{border:0;border-radius:24px;background:var(--blue);color:#fff;padding:12px 18px;font-size:15px}
+.btn.secondary{background:#fff;color:#25282d;border:1px solid #e2e5e9}
+.btn.soft{background:#edf4ff;color:#126ce0}
+.btn.danger{background:#fff2f2;color:#c33d3d;border:1px solid #f4dada}
+.btn.full{width:100%;margin:8px 0}
+.btn.small{padding:8px 12px;font-size:13px}
+.choice{border:1px solid #e9ebef;border-radius:19px;padding:17px 15px;margin:13px 0}
+.choice.selected{border:2px solid var(--blue);background:#f8fbff}
+.choice-title{font-size:18px;font-weight:700}
+.choice-desc{font-size:13px;color:#858a92;line-height:1.7;margin:9px 0}
+.rule{border-top:1px solid #eef0f3;margin-top:12px;padding-top:11px;color:#777e87;font-size:13px}
+.field{width:100%;border:1px solid #e2e5e9;border-radius:12px;padding:12px;font-size:14px;margin:8px 0 14px;outline-color:var(--blue)}
+.checkrow{display:flex;justify-content:space-between;align-items:center;padding:12px 2px;border-bottom:1px solid #f0f1f3;font-size:14px}
+.switch{appearance:none;width:42px;height:24px;background:#d5d8de;border-radius:20px;position:relative;outline:0}
+.switch:checked{background:var(--blue)}.switch:before{content:"";position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.15s}
+.switch:checked:before{left:21px}
+.drawerback,.modalback{display:none;position:absolute;inset:0;background:#0005;z-index:20}
+.drawer{width:84%;height:100%;background:#fff;padding:20px 17px;overflow:auto}
+.drawer h2{font-size:22px;margin:15px 0}
+.draweritem{padding:13px 8px;border-radius:12px;font-size:15px}
+.draweritem:active{background:#f5f6f8}
+.modalback{align-items:flex-end;justify-content:center}
+.modal{background:white;border-radius:22px 22px 0 0;padding:22px 20px 30px;width:100%;max-width:440px}
+.modal h3{font-size:18px;margin:0 0 12px}
+.modal p{font-size:14px;color:#5f646c;line-height:1.7}
+.modal-actions{display:flex;gap:10px;margin-top:18px}.modal-actions button{flex:1}
+.badge{display:inline-block;border-radius:18px;padding:4px 9px;font-size:11px;background:#f0f1f3;color:#777}
+.bluebadge{background:#eaf2ff;color:#1677f8}
+.empty{padding:45px 10px;text-align:center;color:#9aa0a8;font-size:14px}
+</style>
+</head>
+<body>
+<div class="phone">
+ <div class="status"><span>1:36</span><span>◆ ◖ 5G ▮▮　🟩100%</span></div>
+ <header class="header" id="header">
+  <div class="headleft"><button class="icon" onclick="openDrawer()">☰</button><button class="icon" onclick="newChat()">✎</button></div>
+  <div class="brand" id="brand">豆包 ›<small>AI生成可能有误 注意核实</small></div>
+  <div class="headright"></div>
+ </header>
+
+ <div class="content" id="content">
+  <!-- Daily chat -->
+  <section class="screen active" id="s-chat">
+   <div class="chatbody" id="chatbody">
+    <div class="chat-bubble bot">你好！今天有什么想聊的？</div>
+   </div>
+
+   <div class="quick-actions">
+    <button>对话</button><button>帮我写作</button><button>AI创作</button><button>打电话</button>
+   </div>
+  </section>
+
+  <!-- Recent chat: Literature -->
+  <section class="screen" id="s-literature">
+   <div class="chatbody" id="literaturebody">
+    <div class="chat-bubble user">帮我梳理一下这篇文献的研究问题、实验方法和主要结论。</div>
+    <div class="chat-bubble bot">可以。你可以先把论文PDF或摘要发给我，我会按研究背景、研究方法、关键结果和结论帮你整理。</div>
+    <div class="chat-bubble user">我还想把实验数据和文献中的结果对应起来，看看讨论部分怎么写。</div>
+    <div class="chat-bubble bot">好的。我们可以先建立“实验现象—文献依据—可能原因”的对应关系，再逐项补充证据。这个聊天主要用于文献阅读和科研资料整理。</div>
+   </div>
+  </section>
+
+  <!-- Recent chat: Travel -->
+  <section class="screen" id="s-travel">
+   <div class="chatbody" id="travelbody">
+    <div class="chat-bubble user">我平时出去旅游比较喜欢人文景点，也想尝尝当地特色美食，不太喜欢每天排得很满。</div>
+    <div class="chat-bubble bot">了解了。之后帮你规划旅行时，我会优先考虑有历史文化特色的景点和当地美食，行程节奏尽量舒缓。</div>
+    <div class="chat-bubble user">预算大概3000元左右，交通和住宿也要算进去。</div>
+    <div class="chat-bubble bot">好的，我会把预算控制在约3000元，并把交通、住宿、餐饮和门票等费用一起考虑。</div>
+   </div>
+  </section>
+
+  <!-- Recent chat: Private life -->
+  <section class="screen" id="s-private">
+   <div class="chatbody" id="privatebody">
+    <div class="chat-bubble user">最近和室友有些矛盾，学习和生活上的事情也堆在一起，我感觉压力有点大。</div>
+    <div class="chat-bubble bot">听起来你最近同时面对不少事情。你可以先说说最让你困扰的是哪一部分，我们一起梳理，不用急着一次解决所有问题。</div>
+    <div class="chat-bubble user">我有时候只是想找个地方说说，不希望这些私人内容出现在其他聊天里。</div>
+    <div class="chat-bubble bot">明白。涉及私人关系和情绪感受的内容，你可以选择使用临时对话，避免本次内容进入长期记忆或被其他聊天框调用。</div>
+   </div>
+  </section>
+
+  <!-- Settings -->
+  <section class="screen" id="s-settings">
+   <div class="page-title">设置</div><div class="page-sub">管理豆包的使用偏好</div>
+   <div class="panel">
+    <div class="rowitem" onclick="show('s-memory')"><div class="rowleft"><span class="rowicon">◉</span>记忆与授权</div><span class="chev">›</span></div>
+    <div class="rowitem" onclick="show('s-records')"><div class="rowleft"><span class="rowicon">◷</span>历史调用记录</div><span class="chev">›</span></div>
+    <div class="rowitem" onclick="show('s-space')"><div class="rowleft"><span class="rowicon">▱</span>关联空间管理</div><span class="chev">›</span></div>
+    <div class="rowitem" onclick="show('s-explain')"><div class="rowleft"><span class="rowicon">ⓘ</span>操作说明</div><span class="chev">›</span></div>
+   </div>
+   <div class="info">普通聊天无需额外设置即可使用。你可以根据需要管理记忆、授权和临时对话。</div>
+  </section>
+
+  <!-- Memory list -->
+  <section class="screen" id="s-memory">
+   <div class="page-title">记忆与授权</div><div class="page-sub">查看、限制或删除已形成的记忆</div>
+   <div class="tabs"><button class="tab active" onclick="filterMem('all',this)">全部</button><button class="tab" onclick="filterMem('study',this)">学习项目</button><button class="tab" onclick="filterMem('travel',this)">旅行偏好</button><button class="tab" onclick="filterMem('private',this)">私人信息</button></div>
+   <div id="memoryList"></div>
+   <button class="btn secondary full" onclick="show('s-explain')">查看操作说明</button>
+   <div class="panel">
+    <div class="mem-head"><div class="mem-icon">⬡</div><div><div class="mem-title">默认授权策略</div><div class="meta">普通学习项目信息：相关任务可调用<br>私人或敏感信息：调用前需确认</div></div></div>
+    <div class="actions"><button class="action blue" onclick="show('s-policy')">管理默认策略</button></div>
+   </div>
+  </section>
+
+  <!-- Records -->
+  <section class="screen" id="s-records">
+   <div class="page-title">历史调用记录</div><div class="page-sub">查看哪些信息曾被跨对话使用</div>
+   <input class="field" id="recordSearch" placeholder="搜索信息或聊天框">
+   <div class="tabs"><button class="tab active">全部</button><button class="tab">按聊天框</button><button class="tab">按信息类型</button></div>
+   <div class="panel">
+    <div class="mem-head"><div class="mem-icon">▤</div><div style="flex:1"><div class="mem-title">学习项目背景</div><div class="meta">来源：文献阅读 · 11月12日<br>调用到：论文写作 · 今天 14:20<br>用途：延续科研项目背景</div></div><span class="chev">›</span></div>
+    <div class="actions"><button class="action blue" onclick="show('s-detail-study')">查看来源</button><button class="action blue" onclick="revokeRecord(this)">撤回后续授权</button></div>
+   </div>
+   <div class="panel">
+    <div class="mem-head"><div class="mem-icon">▤</div><div style="flex:1"><div class="mem-title">旅行偏好</div><div class="meta">来源：旅行计划 · 11月12日<br>调用到：广州三日游 · 今天<br>用途：安排符合个人偏好的行程</div></div><span class="chev">›</span></div>
+    <div class="actions"><button class="action blue" onclick="show('s-detail-travel')">查看来源</button><button class="action blue" onclick="revokeRecord(this)">撤回后续授权</button></div>
+   </div>
+   <div class="panel">
+    <div class="mem-head"><div class="mem-icon">♡</div><div style="flex:1"><div class="mem-title">情绪压力信息</div><div class="meta">来源：私人生活 · 11月3日<br>调用到：复习计划 · 昨天 20:16<br>用途：调整休息安排</div></div><span class="chev">›</span></div>
+    <div class="actions"><button class="action blue" onclick="show('s-detail-private')">查看来源</button><button class="action blue" onclick="revokeRecord(this)">撤回后续授权</button></div>
+   </div>
+   <div class="panel">
+    <div class="mem-head"><div class="mem-icon">▣</div><div style="flex:1"><div class="mem-title">求职经历</div><div class="meta">来源：求职简历修改 · 10月28日<br>调用到：面试准备 · 11月20日<br>用途：减少重复介绍背景</div></div><span class="chev">›</span></div>
+    <div class="actions"><button class="action blue" onclick="show('s-detail-career')">查看来源</button><button class="action blue" onclick="manageCareerPermission()">管理权限</button></div>
+   </div>
+   <div class="info">你可以在调用记录中查看来源、用途，并管理未来授权范围。</div>
+  </section>
+
+  <!-- New conversation mode -->
+  <section class="screen" id="s-new">
+   <div class="page-title">新建对话</div><div class="page-sub">选择本次对话的记忆方式</div>
+   <div class="choice selected" id="normalChoice" onclick="selectMode('normal')">
+    <div class="rowitem" style="padding:0;border:0"><span class="choice-title">◉ 普通对话 <span class="badge bluebadge">推荐</span></span><span id="normalTick" style="color:#1677f8">●</span></div>
+    <div class="choice-desc">可根据设置形成长期记忆；在授权范围内供后续相关对话调用。</div>
+    <div class="rule">♧　适合学习、项目、长期任务</div>
+   </div>
+   <div class="choice" id="tempChoice" onclick="selectMode('temp')">
+    <div class="rowitem" style="padding:0;border:0"><span class="choice-title">◷ 临时对话（不进入长期记忆）</span><span id="tempTick" style="color:#bbb">○</span></div>
+    <div class="choice-desc">本次对话不新增长期记忆；不向其他聊天框提供本次信息。</div>
+    <div class="rule">♢　适合私人、敏感或一次性问题</div>
+   </div>
+   <div class="panel"><b>ⓘ 数据说明</b><p class="meta">不进入长期记忆 ≠ 平台不保存聊天记录与日志<br>具体留存规则以平台说明为准。</p></div>
+   <div class="checkrow"><b>记住本次选择</b><input type="checkbox" class="switch" id="rememberMode"></div>
+   <button class="btn full" onclick="beginMode()">开始对话</button>
+  </section>
+
+  <!-- Temp chat -->
+  <section class="screen" id="s-temp">
+   <div class="banner">◷　临时对话 · 不进入长期记忆 · 不参与跨对话调用　<button class="source-link" onclick="show('s-explain')">查看说明 ›</button></div>
+   <div class="chatbody" id="tempbody">
+    <div class="chat-bubble user">我和朋友约好周末见面，但对方突然说不来了，也没有解释原因。我有些失落，不知道该怎么回复。</div>
+    <div class="chat-bubble bot">遇到这种情况，先不用急着回复。你可以先想想自己更在意的是临时取消这件事，还是对方没有解释。如果想表达感受，可以平和地说：“有点可惜，我本来挺期待这次见面的。下次如果时间有变化，可以提前告诉我。”</div>
+   </div>
+   <div class="panel">
+    <b>临时模式说明</b>
+    <div class="rowitem"><span>◉　本次内容不会写入长期记忆</span><span>✓</span></div>
+    <div class="rowitem"><span>⇄　其他聊天框不会调用本次信息</span><span>✓</span></div>
+    <div class="rowitem"><span>▤　聊天记录与日志留存以平台规则为准</span><span>ⓘ</span></div>
+   </div>
+   <button class="btn secondary full" onclick="confirmEndTemp()">结束临时对话</button>
+  </section>
+
+  <!-- Space manager -->
+  <section class="screen" id="s-space">
+   <div class="page-title">关联空间</div><div class="page-sub">将相关聊天放在一起，管理信息共享范围</div>
+   <div class="panel"><div class="rowitem"><div><b>科研项目A</b><div class="meta">文献阅读、实验分析、论文写作</div></div><span class="badge bluebadge">已关联</span></div><div class="actions"><button class="action blue" onclick="show('s-space-detail')">管理空间</button></div></div>
+   <div class="panel"><div class="rowitem"><div><b>旅行计划</b><div class="meta">旅行偏好、广州行程、美食推荐</div></div><span class="badge bluebadge">已关联</span></div><div class="actions"><button class="action blue" onclick="show('s-space-detail')">管理空间</button></div></div>
+   <div class="panel"><div class="rowitem"><div><b>私人生活</b><div class="meta">与其他空间默认隔离</div></div><span class="badge">独立空间</span></div></div>
+   <button class="btn full" onclick="show('s-create-space')">＋ 新建关联空间</button>
+  </section>
+
+  <section class="screen" id="s-create-space">
+   <div class="page-title">新建关联空间</div><div class="page-sub">选择需要共享信息的相关聊天</div>
+   <label class="meta">空间名称</label><input class="field" id="spaceName" value="新的项目空间">
+   <div class="section-label">选择聊天</div>
+   <div class="checkrow">文献阅读<input type="checkbox" checked></div><div class="checkrow">实验分析<input type="checkbox" checked></div><div class="checkrow">论文写作<input type="checkbox"></div><div class="checkrow">私人生活<input type="checkbox"></div>
+   <div class="info">加入同一空间的聊天可按空间授权规则共享信息。私人聊天建议保持独立。</div>
+   <button class="btn full" onclick="createSpaceLive()">确认创建</button>
+   <button class="btn secondary full" onclick="show('s-space')">取消</button>
+  </section>
+
+  <!-- Policy -->
+  <section class="screen" id="s-policy">
+   <div class="page-title">默认授权策略</div><div class="page-sub">设置不同类型记忆的调用方式</div>
+   <div class="panel"><b>普通学习项目信息</b><p class="meta">同一关联空间内的相关任务可直接调用</p><div class="checkrow">允许相关任务调用<input type="checkbox" class="switch" checked></div></div>
+   <div class="panel"><b>私人或敏感信息</b><p class="meta">跨聊天框使用前，先向你说明来源和用途</p><div class="checkrow">调用前需要确认<input type="checkbox" class="switch" checked></div></div>
+   <button class="btn full" onclick="savePolicyLive()">保存设置</button>
+  </section>
+
+  <!-- Details -->
+  <section class="screen" id="s-detail-study">
+   <div class="page-title">记忆详情</div><div class="page-sub">学习项目背景</div>
+   <div class="panel"><div class="mem-title">学习项目背景</div><p class="meta">已记录：正在开展相关科研项目，持续整理文献、实验数据与论文内容。</p><div class="rowitem"><span>来源聊天</span><b>文献阅读</b></div><div class="rowitem"><span>记录时间</span><b>11月12日</b></div><div class="rowitem"><span>当前范围</span><b>科研项目A关联空间</b></div></div>
+   <button class="btn soft full" onclick="openSourceChat('study')">查看原始聊天</button><button class="btn secondary full" onclick="show('s-records')">返回调用记录</button>
+  </section>
+  <section class="screen" id="s-detail-travel">
+   <div class="page-title">记忆详情</div><div class="page-sub">旅行偏好</div>
+   <div class="panel"><div class="mem-title">旅行偏好</div><p class="meta">已记录：喜欢人文景点和当地美食；不喜欢行程安排过于紧凑；本次旅行预算约3000元。</p><div class="rowitem"><span>来源聊天</span><b>旅行计划</b></div><div class="rowitem"><span>记录时间</span><b>11月12日</b></div><div class="rowitem"><span>当前范围</span><b>旅行计划关联空间</b></div></div>
+   <button class="btn soft full" onclick="openSourceChat('travel')">查看原始聊天</button><button class="btn secondary full" onclick="show('s-records')">返回调用记录</button>
+  </section>
+  <section class="screen" id="s-detail-private">
+   <div class="page-title">记忆详情</div><div class="page-sub">情绪压力信息 <span class="badge">敏感信息</span></div>
+   <div class="panel"><div class="mem-title">情绪压力信息</div><p class="meta">已记录：近期学习和生活事务较多，容易感到疲惫，希望合理安排休息。</p><div class="rowitem"><span>来源聊天</span><b>私人生活</b></div><div class="rowitem"><span>记录时间</span><b>11月3日</b></div><div class="rowitem"><span>当前范围</span><b>调用前需确认</b></div></div>
+   <button class="btn soft full" onclick="openSourceChat('study')">查看原始聊天</button><button class="btn secondary full" onclick="show('s-records')">返回调用记录</button>
+  </section>
+  <section class="screen" id="s-detail-career">
+   <div class="page-title">记忆详情</div><div class="page-sub">求职经历</div>
+   <div class="panel"><div class="mem-title">求职经历</div><p class="meta">已记录：用户曾整理求职简历及相关经历。</p><div class="rowitem"><span>来源聊天</span><b>求职简历修改</b></div><div class="rowitem"><span>记录时间</span><b>10月28日</b></div><div class="rowitem"><span>当前范围</span><b>面试准备相关任务</b></div></div>
+   <button class="btn secondary full" onclick="show('s-records')">返回调用记录</button>
+  </section>
+
+  <!-- Explanation -->
+  <section class="screen" id="s-explain">
+   <div class="page-title">操作说明</div><div class="page-sub">区分删除、关闭与授权撤回</div>
+   <div class="banner"><b>重要提醒</b><br>不同操作影响的范围不同<br>平台日志与数据留存仍以平台规则为准</div>
+   <div class="panel"><div class="mem-title">关闭记忆开关</div><div class="meta">停止后续形成或调用长期记忆；<br>已有记忆不一定自动删除。</div></div>
+   <div class="panel"><div class="mem-title">删除这条记忆</div><div class="meta">删除对应的可调用记忆；<br>后续回答不再参考该条记忆。</div></div>
+   <div class="panel"><div class="mem-title">删除聊天记录</div><div class="meta">删除对话内容；<br>不必然同步删除已形成的记忆。</div></div>
+   <div class="panel"><div class="mem-title">撤回后续授权</div><div class="meta">保留已有记忆；<br>停止未来相关任务继续调用。</div></div>
+   <div class="info"><b>仍需注意</b><br>• 停止参考的生效时间以系统处理为准<br>• 日志留存与训练设置需要单独查看<br>• 如需彻底管理，请结合记忆页与隐私设置操作</div>
+   <button class="btn full" onclick="show(explainFrom)">我知道了</button>
+  </section>
+ </div>
+
+ <div class="composer-wrap" id="composer">
+  <div class="composer"><button>◎</button><input id="message" placeholder="发消息或按住说话…" onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">➤</button><button>＋</button></div>
+  <div class="navline"></div>
+ </div>
+
+ <div class="drawerback" id="drawerback" onclick="closeDrawer(event)">
+  <div class="drawer" onclick="event.stopPropagation()">
+   <h2>豆包</h2>
+   <div class="draweritem" onclick="show('s-chat');closeDrawer()">◉　主对话</div>
+   <div class="draweritem" onclick="newChat();closeDrawer()">◯　新对话</div>
+   <div class="draweritem" onclick="show('s-space');closeDrawer()">▱　关联空间</div>
+   <div class="draweritem" onclick="show('s-records');closeDrawer()">◷　历史调用记录</div>
+   <div class="draweritem" onclick="show('s-settings');closeDrawer()">⚙　设置</div>
+   <div class="section-label">最近聊天</div>
+   <div class="draweritem" onclick="show('s-literature');closeDrawer()">文献阅读</div>
+   <div class="draweritem" onclick="show('s-travel');closeDrawer()">旅行计划</div>
+   <div class="draweritem" onclick="show('s-private');closeDrawer()">私人生活</div>
+  </div>
+ </div>
+ <div class="modalback" id="modalback" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" id="modalcontent"></div>
+ </div>
+</div>
+<script>
+let mode='normal', memoryFilter='all', toastTimer, explainFrom='s-memory';
+const screens=[...document.querySelectorAll('.screen')];
+function show(id){
+ if(id==='s-explain'){explainFrom=document.querySelector('.screen.active')?.id||'s-memory';}
+ screens.forEach(s=>s.classList.toggle('active',s.id===id));
+ const isChat=['s-chat','s-temp','s-literature','s-travel','s-private'].includes(id);
+ document.getElementById('composer').style.display=isChat?'block':'none';
+ document.getElementById('header').style.display='flex';
+ document.getElementById('brand').innerHTML=(id==='s-temp'?'临时对话':'豆包 ›')+(id==='s-temp'?'<small>本次对话不进入长期记忆</small>':'<small>AI生成可能有误 注意核实</small>');
+ document.getElementById('content').scrollTop=0;
+}
+function openDrawer(){document.getElementById('drawerback').style.display='block'}
+function closeDrawer(e){document.getElementById('drawerback').style.display='none'}
+function newChat(){mode='normal';selectMode('normal');show('s-new')}
+function selectMode(m){
+ mode=m;
+ document.getElementById('normalChoice').classList.toggle('selected',m==='normal');
+ document.getElementById('tempChoice').classList.toggle('selected',m==='temp');
+ document.getElementById('normalTick').textContent=m==='normal'?'●':'○';
+ document.getElementById('tempTick').textContent=m==='temp'?'●':'○';
+}
+function beginMode(){if(mode==='temp'){show('s-temp')}else{show('s-chat');document.getElementById('message').focus()}}
+function sendMessage(){
+ const input=document.getElementById('message'),v=input.value.trim();if(!v)return;
+ const active=document.querySelector('.screen.active');
+ const body=active?.querySelector('.chatbody') || document.getElementById('chatbody');
+ body.insertAdjacentHTML('beforeend',`<div class="chat-bubble user">${escapeHtml(v)}</div>`);
+ input.value='';
+ if(active?.id==='s-literature'){
+  body.insertAdjacentHTML('beforeend',`<div class="chat-bubble bot">我会结合当前文献阅读的上下文继续帮你整理。你可以把具体段落或数据发来，我们逐项分析。</div>`);
+ }else if(active?.id==='s-travel' || /广州|旅行|旅游/.test(v)){
+  body.insertAdjacentHTML('beforeend',`<div class="chat-bubble bot">我可以结合你在「旅行计划」聊天中提到的偏好，安排人文景点和当地美食，并尽量避免行程过于紧凑。<div class="banner">已参考历史记忆：旅行偏好<br>来源：旅行计划 · 11月12日<br><button class="source-link" onclick="show('s-detail-travel')">查看本次调用来源 ›</button></div></div>`);
+ }else if(active?.id==='s-private'){
+  body.insertAdjacentHTML('beforeend',`<div class="chat-bubble bot">我会在当前私人生活对话中回应你。若不希望本次内容形成长期记忆，可以新建临时对话。</div>`);
+ }else if(/周末|安排|放松/.test(v)){
+  body.insertAdjacentHTML('beforeend',`<div class="chat-bubble bot"><b>本次调用需确认</b> <span class="badge">敏感信息</span><p>准备参考：近期学习和生活事务较多，容易感到疲惫。</p><p class="meta">来源：私人生活 · 11月3日<br>用途：帮助安排轻松的周末活动</p><p>是否允许本次使用这条信息？拒绝本次不会删除原有记忆。</p><div class="actions"><button class="action blue" onclick="allowSensitive(true)">允许本次</button><button class="action" onclick="allowSensitive(false)">拒绝本次</button></div></div>`);
+ }else{
+  body.insertAdjacentHTML('beforeend',`<div class="chat-bubble bot">我可以和你一起梳理这件事。你也可以补充一点背景，让建议更贴近你的实际情况。</div>`);
+ }
+ document.getElementById('content').scrollTop=document.getElementById('content').scrollHeight;
+}
+function allowSensitive(yes){
+ const msg=yes?'已允许本次调用。我会结合这条信息安排更轻松的周末。':'已拒绝本次调用。我不会在这次回答中参考这条信息，原有记忆仍保留。';
+ const active=document.querySelector('.screen.active');const body=active?.querySelector('.chatbody') || document.getElementById('chatbody');body.insertAdjacentHTML('beforeend',`<div class="chat-bubble bot">${msg}</div>`);
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function confirmEndTemp(){modal('结束临时对话？','结束后，本次对话仍按平台聊天记录规则处理，但不会加入长期记忆，也不会参与跨聊天框调用。',[['继续保留','secondary',closeModal],['结束对话','primary',()=>{show('s-chat');closeModal()}]])}
+function modal(title,body,buttons){
+ const c=document.getElementById('modalcontent');c.innerHTML=`<h3>${title}</h3><p>${body}</p><div class="modal-actions">${buttons.map((b,i)=>`<button class="btn ${b[1]==='secondary'?'secondary':''}" id="mb${i}">${b[0]}</button>`).join('')}</div>`;
+ buttons.forEach((b,i)=>document.getElementById('mb'+i).onclick=b[2]);
+ document.getElementById('modalback').style.display='flex';
+}
+function closeModal(e){document.getElementById('modalback').style.display='none'}
+function toast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:absolute;bottom:85px;left:50%;transform:translateX(-50%);background:#222;color:white;padding:10px 15px;border-radius:20px;font-size:12px;z-index:50;white-space:nowrap';document.querySelector('.phone').appendChild(t)}t.textContent=msg;t.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',1700)}
+function filterMem(f,el){memoryFilter=f;document.querySelectorAll('#s-memory .tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderMemory()}
+function renderMemory(){
+ const data=[
+  {f:'study',icon:'',title:'新闻传播专业研究生',source:'学习规划对话 · 11月6日',scope:'学习与求职相关任务',target:'s-detail-study'},
+  {f:'study',icon:'',title:'科研项目A背景',source:'文献阅读 · 11月12日',scope:'科研项目A关联空间',target:'s-detail-study'},
+  {f:'travel',icon:'',title:'旅行偏好',source:'旅行计划 · 11月12日',scope:'旅行计划关联空间',target:'s-detail-travel'},
+  {f:'private',icon:'',title:'与室友发生矛盾、最近压力较大',source:'私人生活 · 11月3日',scope:'调用前需确认',target:'s-detail-private'}
+ ];
+ document.getElementById('memoryList').innerHTML=data.filter(x=>memoryFilter==='all'||x.f===memoryFilter).map((x,i)=>`<div class="panel"><div class="mem-head"><div style="flex:1"><div class="mem-title">${x.title} ${x.f==='private'?'<span class="badge">敏感信息</span>':''}</div><div class="meta">来源：${x.source}<br>当前范围：${x.scope}</div></div></div><div class="actions"><button class="action" onclick="toast('已拒绝本次调用（演示）')">拒绝本次</button><button class="action" onclick="revokeRecord(this)">撤回后续</button><button class="action red" onclick="modal('删除记忆','确认删除这条记忆？此操作仅为原型演示。',[['取消','secondary',closeModal],['确认删除','primary',()=>{closeModal();toast('模拟删除完成')} ]])">删除记忆</button></div><button class="source-link" onclick="show('${x.target}')">查看详情 ›</button></div>`).join('');
+}
+function closeModal(){document.getElementById('modalback').style.display='none'}
+renderMemory();
+</script>
+
+<script>
+/* 交互增强层：以下状态仅用于研究原型演示，不连接真实账户或平台数据。 */
+const demoState = {
+  memories: [
+    {id:'study', title:'科研项目A背景', text:'正在开展相关科研项目，持续整理文献、实验数据与论文内容。', source:'文献阅读', date:'11月12日', scope:'科研项目A关联空间', allowed:true},
+    {id:'travel', title:'旅行偏好', text:'喜欢人文景点和当地美食；不喜欢行程安排过于紧凑；预算约3000元。', source:'旅行计划', date:'11月12日', scope:'旅行计划关联空间', allowed:true},
+    {id:'private', title:'情绪压力信息', text:'近期学习和生活事务较多，容易感到疲惫，希望合理安排休息。', source:'私人生活', date:'11月3日', scope:'调用前需确认', allowed:true},
+    {id:'career', title:'求职经历', text:'曾整理求职简历及相关经历。', source:'求职简历修改', date:'10月28日', scope:'面试准备相关任务', allowed:true}
+  ],
+  calls: [
+    {id:'c1', memory:'study', source:'文献阅读', target:'论文写作', time:'今天 14:20', purpose:'延续科研项目背景'},
+    {id:'c2', memory:'travel', source:'旅行计划', target:'广州三日游', time:'今天 15:05', purpose:'安排符合个人偏好的行程'},
+    {id:'c3', memory:'private', source:'私人生活', target:'复习计划', time:'昨天 20:16', purpose:'调整休息安排'},
+    {id:'c4', memory:'career', source:'求职简历修改', target:'面试准备', time:'11月20日', purpose:'减少重复介绍背景'}
+  ],
+  spaces: [
+    {name:'科研项目A', chats:['文献阅读','实验分析','论文写作'], private:false},
+    {name:'旅行计划', chats:['旅行计划','广州行程','美食推荐'], private:false},
+    {name:'私人生活', chats:['情绪倾诉','关系咨询'], private:true}
+  ]
+};
+
+function renderMemory() {
+  const host=document.getElementById('memoryList');
+  if(!host)return;
+  const active=document.querySelector('#s-memory .tab.active');
+  const filter=active?.textContent.includes('学习')?'study':active?.textContent.includes('旅行')?'travel':active?.textContent.includes('私人')?'private':'all';
+  const rows=demoState.memories.filter(m=>filter==='all'||m.id===filter||(filter==='study'&&m.id==='career'));
+  host.innerHTML=rows.length?rows.map(m=>`
+    <div class="panel">
+      <div class="mem-head"><div style="flex:1">
+        <div class="mem-title">${m.title} ${m.id==='private'?'<span class="badge">敏感信息</span>':''} ${m.allowed?'':'<span class="badge">已撤回授权</span>'}</div>
+        <div class="meta">来源：${m.source} · ${m.date}<br>当前范围：${m.scope}</div>
+        <p class="meta">${m.text}</p>
+      </div></div>
+      <div class="actions">
+        <button class="action blue" onclick="editMemoryLive('${m.id}')">查看/修改</button>
+        <button class="action" onclick="toggleMemoryPermission('${m.id}')">${m.allowed?'撤回后续':'恢复授权'}</button>
+        <button class="action red" onclick="deleteMemoryLive('${m.id}')">删除记忆</button>
+      </div>
+    </div>`).join(''):'<div class="empty">暂无符合条件的记忆</div>';
+}
+function editMemoryLive(id){
+  const m=demoState.memories.find(x=>x.id===id);if(!m)return;
+  modal('查看与修改记忆',`<p><b>${m.title}</b></p><p>来源：${m.source} · ${m.date}</p><textarea id="memoryEditField" class="field" rows="4">${m.text}</textarea><div class="checkrow">允许后续调用 <input id="memoryEditAllowed" type="checkbox" class="switch" ${m.allowed?'checked':''}></div>`,[
+    ['取消','secondary',closeModal],
+    ['保存修改','primary',()=>{m.text=document.getElementById('memoryEditField').value.trim();m.allowed=document.getElementById('memoryEditAllowed').checked;closeModal();renderMemory();toast('记忆内容与授权范围已更新')}]
+  ]);
+}
+function toggleMemoryPermission(id){
+  const m=demoState.memories.find(x=>x.id===id);if(!m)return;
+  m.allowed=!m.allowed;renderMemory();
+  toast(m.allowed?'已恢复后续授权':'已撤回后续授权；已有记忆保留');
+}
+function deleteMemoryLive(id){
+  const m=demoState.memories.find(x=>x.id===id);if(!m)return;
+  modal('删除这条记忆？',`确认删除“${m.title}”对应的可调用记忆？此操作不代表同步删除原始聊天记录。`,[
+    ['取消','secondary',closeModal],
+    ['确认删除','primary',()=>{demoState.memories=demoState.memories.filter(x=>x.id!==id);demoState.calls=demoState.calls.filter(x=>x.memory!==id);closeModal();renderMemory();renderCallHistory();toast('这条记忆已从原型中删除')}]
+  ]);
+}
+function renderCallHistory(){
+  const host=document.getElementById('callHistoryLive');if(!host)return;
+  const q=(document.getElementById('recordSearch')?.value||'').trim().toLowerCase();
+  const rows=demoState.calls.filter(c=>[c.source,c.target,c.purpose,demoState.memories.find(m=>m.id===c.memory)?.title].join(' ').toLowerCase().includes(q));
+  host.innerHTML=rows.length?rows.map(c=>`
+    <div class="panel"><div class="mem-title">${demoState.memories.find(m=>m.id===c.memory)?.title||'已删除的记忆'}</div>
+    <div class="meta">来源：${c.source}<br>调用到：${c.target} · ${c.time}<br>用途：${c.purpose}</div>
+    <div class="actions"><button class="action blue" onclick="openSourceChat('${c.memory}')">查看来源</button><button class="action" onclick="toggleMemoryPermission('${c.memory}')">撤回/恢复后续授权</button></div></div>`).join(''):'<div class="empty">没有找到相关调用记录</div>';
+}
+function revokeRecord(button){
+  const panel=button.closest('.panel');
+  const title=panel?.querySelector('.mem-title')?.textContent||'该条记忆';
+  const m=demoState.memories.find(x=>x.title===title);
+  if(m){m.allowed=false;button.textContent='已撤回';button.disabled=true;toast('已撤回后续授权；已有记忆保留')}
+  else toast('该条记录的后续授权已更新');
+}
+function openSourceChat(id){
+  const map={study:'s-literature',travel:'s-travel',private:'s-private',career:'s-chat'};
+  show(map[id]||'s-chat');toast('已打开对应来源聊天');
+}
+function manageCareerPermission(){show('s-policy')}
+function renderSpacesLive(){
+  const host=document.getElementById('spaceListLive');if(!host)return;
+  host.innerHTML=demoState.spaces.map((s,i)=>`<div class="panel"><div class="rowitem"><div><b>${s.name}</b><div class="meta">${s.chats.join('、')}</div></div><span class="badge ${s.private?'':'bluebadge'}">${s.private?'独立空间':'已关联'}</span></div><div class="actions"><button class="action blue" onclick="toast('空间：${s.name}；包含${s.chats.join('、')}')">查看空间</button>${s.private?'':`<button class="action" onclick="unlinkSpaceLive(${i})">解除关联</button>`}</div></div>`).join('');
+}
+function unlinkSpaceLive(i){
+  const s=demoState.spaces[i];if(!s)return;
+  modal('解除空间关联？',`解除后，“${s.name}”内聊天不再共享后续信息，已有记忆不会因此自动删除。`,[
+    ['取消','secondary',closeModal],
+    ['确认解除','primary',()=>{s.private=true;closeModal();renderSpacesLive();toast('已解除关联，已有记忆保留')}]
+  ]);
+}
+function createSpaceLive(){
+  const name=document.getElementById('spaceName').value.trim()||'新的项目空间';
+  const boxes=[...document.querySelectorAll('#s-create-space input[type=checkbox]')];
+  const names=['文献阅读','实验分析','论文写作','私人生活'];
+  const chats=names.filter((n,i)=>boxes[i]?.checked);
+  if(!chats.length){toast('请至少选择一个聊天');return}
+  if(chats.includes('私人生活')&&chats.length>1){toast('私人生活聊天建议单独隔离');return}
+  demoState.spaces.push({name,chats,private:chats[0]==='私人生活'});
+  renderSpacesLive();show('s-space');toast('关联空间已创建');
+}
+function savePolicyLive(){toast('默认授权策略已保存（本次原型会话内生效）');show('s-memory')}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const records=document.getElementById('s-records');
+  if(records){
+    const staticPanels=[...records.querySelectorAll('.panel')];
+    staticPanels.forEach(x=>x.remove());
+    const info=records.querySelector('.info');
+    const host=document.createElement('div');host.id='callHistoryLive';info?.before(host);
+    document.getElementById('recordSearch')?.addEventListener('input',renderCallHistory);
+    renderCallHistory();
+  }
+  const spaces=document.getElementById('s-space');
+  if(spaces){
+    spaces.querySelectorAll('.panel').forEach(x=>x.remove());
+    const title=spaces.querySelector('.page-sub');
+    const host=document.createElement('div');host.id='spaceListLive';title?.after(host);
+    renderSpacesLive();
+  }
+});
+</script>
+
+</body></html>
